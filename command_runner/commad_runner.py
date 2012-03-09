@@ -12,8 +12,8 @@ class ParamikoRuner(object):
     """
     def __init__(self):
         import paramiko
-        self._server = getattr(settings, 'AUTH_SERVER', '127.0.0.1')
-        self._serverUser = getattr(settings, 'AUTH_SERVER_USER', 'root')
+        self._server = getattr(settings, 'COMMAND_TARGET_SERVER', '127.0.0.1')
+        self._serverUser = getattr(settings, 'COMMAND_TARGET_USER', 'root')
         self._client = paramiko.SSHClient()
         self._client.load_host_keys(os.path.expanduser('~/.ssh/known_hosts'))
         self._client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
