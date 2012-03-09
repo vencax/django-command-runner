@@ -1,0 +1,53 @@
+Introduction
+==============
+
+This is usable when you need issue commands to a shell from django view.
+You can use variety of mechanisms. Everyone has its pros and cons.
+If you use os.system(command) you have to run all the stuff under root privileges.
+Along this you are not able to command a remote machine.
+On the other way if you issue a command over ssh channel, you need a plain-text password.
+Storing this password can be a security issue. Maybe there is even better mechanism.
+Comments are welcomed.
+
+Installation
+==============
+
+1. Clone the read-only repo
+
+     git clone git@github.com:vencax/django-sql-nss-admin.git
+
+2. Install the dependencies via PIP.
+
+     pip install -r requirements.txt
+
+3. Add nss_admin into your INSTALLED_APPS.
+
+4. Include nss_admin.urls into your root url conf
+
+     url(r'^nss_admin/', include('nss_admin.urls')),
+     
+5. Add sys_users database connection and router:
+	
+	DATABASES['sys_users'] = {
+	  'ENGINE': 'django.db.backends.mysql',
+	  'NAME': 'yourDBName',
+	  'USER': 'yourDBUser',
+	  'PASSWORD': yoursecretpwd,
+	  'HOST': 'yourDBHost',
+	  'PORT': '3306'
+	}
+
+	DATABASE_ROUTERS = ['nss_admin.routers.SysAccountsRouter']
+		
+6. Optionaly add following configs into settings
+
+	DEFAULT_SHELL = '/bin/bash' - default shell associated with a user 
+	PGINA_HACKS = True	- if you plan use PGina for auth on Win machines (hack - see code ..)
+	UID_RANGE_BEGIN = 5000 - begin of interval users ID taken from (prevent mangling with system account IDs) 
+	GID_RANGE_BEGIN = 5000 - begin of interval groups ID taken from (prevent mangling with system groups IDs)
+	
+	plus few others (for details see. the code)
+				
+7. You are done
+
+
