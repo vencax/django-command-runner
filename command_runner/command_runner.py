@@ -11,6 +11,7 @@ class ParamikoRuner(object):
     Base class for paramiko based runners.
     """
     known_hosts = '~/.ssh/known_hosts'
+    
     def __init__(self):
         import paramiko
         self._server = getattr(settings, 'COMMAND_TARGET_SERVER', '127.0.0.1')
