@@ -21,6 +21,8 @@ setup(name='django-command-runner',
     packages=find_packages(),
     install_requires=[
         'django>=1.3',
+        'lockfile',
+        'paramiko'
     ],
     keywords="django ssh bash command script",
     include_package_data=True,

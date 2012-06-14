@@ -10,15 +10,17 @@ class ParamikoRuner(object):
     """
     Base class for paramiko based runners.
     """
+    known_hosts = '~/.ssh/known_hosts'
     def __init__(self):
         import paramiko
         self._server = getattr(settings, 'COMMAND_TARGET_SERVER', '127.0.0.1')
         self._serverUser = getattr(settings, 'COMMAND_TARGET_USER', 'root')
         self._client = paramiko.SSHClient()
-        self._client.load_host_keys(os.path.expanduser('~/.ssh/known_hosts'))
+        if os.path.exists(self.known_hosts):
+            self._client.load_host_keys(os.path.expanduser(self.known_hosts))
         self._client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         from lockfile import FileLock
-        self._lock = FileLock('__lock')
+        self._lock = FileLock('%s/__lock' % settings.PROJECT_ROOT)
 
     def run(self, command):
         if not hasattr(self, 'shell'):
@@ -34,7 +36,7 @@ class SudoBasedParamikoRuner(ParamikoRuner):
     """
     def __init__(self):
         super(SudoBasedParamikoRuner, self).__init__()
-        self._passwd = open('admin.pwd').read()
+        self._passwd = open('%s/admin.pwd' % settings.PROJECT_ROOT).read()
         
     def runCommand(self, command):
         self.shell.send('sudo -i\n')
