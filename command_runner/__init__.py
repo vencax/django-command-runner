@@ -8,4 +8,4 @@ runner = runnerClass()
 
 def runCommand(command):
     """ Runs command on remote machine """
-    runner.run(command)
+    return runner.run(command)

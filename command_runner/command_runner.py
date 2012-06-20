@@ -5,6 +5,7 @@ Created on Mar 9, 2012
 '''
 import os
 from django.conf import settings
+import re
 
 class ParamikoRuner(object):
     """
@@ -28,13 +29,15 @@ class ParamikoRuner(object):
             self._client.connect(self._server, username=self._serverUser)
             self.shell = self._client.invoke_shell()
         with self._lock:
-            self.runCommand(command)
+            return self.runCommand(command)
       
 class SudoBasedParamikoRuner(ParamikoRuner):
     """
     This is a bit problematic since there is many ways how to login as root.
     That's why this class.
     """
+    retvalRe = re.compile(r'\r\n(?P<rv>[0-9]{1,})\r\n')
+    
     def __init__(self):
         super(SudoBasedParamikoRuner, self).__init__()
         self._passwd = open('%s/admin.pwd' % settings.PROJECT_ROOT).read()
@@ -44,15 +47,17 @@ class SudoBasedParamikoRuner(ParamikoRuner):
         self._waitForPrompt()
         self.shell.send('%s\n' % command)
         self._waitForPrompt()
+        self.shell.send('echo $?\n')
+        return self._waitForPrompt(True)
         
-    def _waitForPrompt(self):
-        buf = self.shell.recv(9999)
+    def _waitForPrompt(self, bufDesired=False):
+        buf = self.shell.recv(1024)
         while not buf.endswith('~# '):
             if buf.endswith(': '):
                 self.shell.send('%s\n' % self._passwd)
-            buf += self.shell.recv(9999)            
-        if settings.DEBUG:
-            print buf
+            buf += self.shell.recv(1024)
+        if bufDesired:
+            return int(self.retvalRe.search(buf).group('rv'))
         
         
 class SysRunner(object):
