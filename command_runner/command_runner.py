@@ -6,27 +6,38 @@ Created on Mar 9, 2012
 import os
 from django.conf import settings
 import re
+from paramiko.ssh_exception import SSHException
+
+def get_username():
+    import pwd
+    info = pwd.getpwuid(os.getuid())
+    return info[5]
 
 class ParamikoRuner(object):
     """
     Base class for paramiko based runners.
     """
-    known_hosts = '~/.ssh/known_hosts'
+    known_hosts = os.path.join(get_username(), '.ssh/known_hosts')
     
     def __init__(self):
         import paramiko
         self._server = getattr(settings, 'COMMAND_TARGET_SERVER', '127.0.0.1')
         self._serverUser = getattr(settings, 'COMMAND_TARGET_USER', 'root')
         self._client = paramiko.SSHClient()
-        if os.path.exists(os.path.expanduser(self.known_hosts)):
-            self._client.load_host_keys(os.path.expanduser(self.known_hosts))
+        if os.path.exists(self.known_hosts):
+            self._client.load_host_keys(self.known_hosts)
         self._client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         from lockfile import FileLock
         self._lock = FileLock('%s/__lock' % settings.PROJECT_ROOT)
 
     def run(self, command):
         if not hasattr(self, 'shell'):
-            self._client.connect(self._server, username=self._serverUser)
+            try:
+                self._client.connect(self._server, username=self._serverUser)
+            except SSHException:
+                raise Exception('Unable to connect to %s as %s, (%s)' %\
+                                (self._server, self._serverUser, 
+                                 self.known_hosts))
             self.shell = self._client.invoke_shell()
         with self._lock:
             return self.runCommand(command)
