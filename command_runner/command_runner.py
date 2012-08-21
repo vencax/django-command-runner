@@ -34,10 +34,9 @@ class ParamikoRuner(object):
         if not hasattr(self, 'shell'):
             try:
                 self._client.connect(self._server, username=self._serverUser)
-            except SSHException:
+            except SSHException, e:
                 raise Exception('Unable to connect to %s as %s, (%s)' %\
-                                (self._server, self._serverUser, 
-                                 self.known_hosts))
+                                (self._server, self._serverUser, str(e)))
             self.shell = self._client.invoke_shell()
         with self._lock:
             return self.runCommand(command)
