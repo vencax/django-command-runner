@@ -33,7 +33,9 @@ class ParamikoRuner(object):
     def run(self, command):
         if not hasattr(self, 'shell'):
             try:
-                self._client.connect(self._server, username=self._serverUser)
+                self._passwd = open('%s/admin.pwd' % settings.PROJECT_ROOT).read()
+                self._client.connect(self._server, username=self._serverUser, 
+                                     password=self._passwd)
             except SSHException, e:
                 raise Exception('Unable to connect to %s as %s, (%s)' %\
                                 (self._server, self._serverUser, str(e)))
