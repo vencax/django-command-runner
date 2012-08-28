@@ -60,7 +60,10 @@ class SudoBasedParamikoRuner(ParamikoRuner):
         self.shell.send('%s\n' % command)
         self._waitForPrompt()
         self.shell.send('echo $?\n')
-        return self._waitForPrompt(True)
+        try:
+            return self._waitForPrompt(True)
+        except AttributeError:
+            raise Exception('%s not returned return value' % command)
         
     def _waitForPrompt(self, bufDesired=False):
         buf = self.shell.recv(1024)
@@ -68,7 +71,7 @@ class SudoBasedParamikoRuner(ParamikoRuner):
             if buf.endswith(': '):
                 self.shell.send('%s\n' % self._passwd)
             buf += self.shell.recv(1024)
-        if bufDesired:
+        if bufDesired :
             return int(self.retvalRe.search(buf).group('rv'))
         
         
