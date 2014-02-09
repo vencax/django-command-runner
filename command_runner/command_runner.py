@@ -21,8 +21,8 @@ class ParamikoRuner(object):
     
     def __init__(self):
         import paramiko
-        self._server = settings['COMMAND_TARGET_SERVER']
-        self._serverUser = settings['COMMAND_TARGET_USER']
+        self._server = settings.COMMAND_TARGET_SERVER
+        self._serverUser = settings.COMMAND_TARGET_USER
         self._client = paramiko.SSHClient()
         if os.path.exists(self.known_hosts):
             self._client.load_host_keys(self.known_hosts)
@@ -33,7 +33,7 @@ class ParamikoRuner(object):
     def run(self, command):
         if not hasattr(self, 'shell'):
             try:
-                self._passwd = settings['COMMAND_TARGET_PASSWD']
+                self._passwd = settings.COMMAND_TARGET_PASSWD
                 self._client.connect(self._server, username=self._serverUser, 
                                      password=self._passwd)
             except SSHException, e:
@@ -52,7 +52,7 @@ class SudoBasedParamikoRuner(ParamikoRuner):
     
     def __init__(self):
         super(SudoBasedParamikoRuner, self).__init__()
-        self._passwd = settings['COMMAND_TARGET_PASSWD']
+        self._passwd = settings.COMMAND_TARGET_PASSWD
         
     def runCommand(self, command):
         self.shell.send('sudo -i\n')
