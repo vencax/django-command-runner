@@ -20,8 +20,7 @@ class ParamikoRuner(object):
     
     def __init__(self, settings):
         import paramiko
-        self._server = settings.COMMAND_TARGET_SERVER
-        self._serverUser = settings.COMMAND_TARGET_USER
+        self._settings = settings
         self._client = paramiko.SSHClient()
         if os.path.exists(self.known_hosts):
             self._client.load_host_keys(self.known_hosts)
@@ -32,10 +31,13 @@ class ParamikoRuner(object):
     def run(self, command):
         if not hasattr(self, 'shell'):
             try:
-                self._client.connect(self._server, username=self._serverUser)
+                server = self._settings.COMMAND_TARGET_SERVER
+                user = self._settings.COMMAND_TARGET_USER
+                passwd = self._settings.COMMAND_TARGET_PASSWD
+                self._client.connect(server, username=user, password=passwd)
             except SSHException, e:
-                raise Exception('Unable to connect to %s as %s, (%s)' %\
-                                (self._server, self._serverUser, str(e)))
+                raise Exception('Unable to connect to %s as %s, (%s)' % \
+                                (server, user, str(e)))
             self.shell = self._client.invoke_shell()
         with self._lock:
             return self.runCommand(command)
@@ -46,9 +48,6 @@ class SudoBasedParamikoRuner(ParamikoRuner):
     That's why this class.
     """
     retvalRe = re.compile(r'\r\n(?P<rv>[0-9]{1,})\r\n')
-    
-    def __init__(self):
-        super(SudoBasedParamikoRuner, self).__init__()
         
     def runCommand(self, command):
         self.shell.send('sudo -i\n')
