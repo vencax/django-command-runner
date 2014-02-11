@@ -4,7 +4,6 @@ Created on Mar 9, 2012
 @author: vencax 
 '''
 import os
-from django.conf import settings
 import re
 from paramiko.ssh_exception import SSHException
 
@@ -19,7 +18,7 @@ class ParamikoRuner(object):
     """
     known_hosts = os.path.join(get_username(), '.ssh/known_hosts')
     
-    def __init__(self):
+    def __init__(self, settings):
         import paramiko
         self._server = settings.COMMAND_TARGET_SERVER
         self._serverUser = settings.COMMAND_TARGET_USER
@@ -33,9 +32,7 @@ class ParamikoRuner(object):
     def run(self, command):
         if not hasattr(self, 'shell'):
             try:
-                self._passwd = settings.COMMAND_TARGET_PASSWD
-                self._client.connect(self._server, username=self._serverUser, 
-                                     password=self._passwd)
+                self._client.connect(self._server, username=self._serverUser)
             except SSHException, e:
                 raise Exception('Unable to connect to %s as %s, (%s)' %\
                                 (self._server, self._serverUser, str(e)))
@@ -52,7 +49,6 @@ class SudoBasedParamikoRuner(ParamikoRuner):
     
     def __init__(self):
         super(SudoBasedParamikoRuner, self).__init__()
-        self._passwd = settings.COMMAND_TARGET_PASSWD
         
     def runCommand(self, command):
         self.shell.send('sudo -i\n')
@@ -60,20 +56,17 @@ class SudoBasedParamikoRuner(ParamikoRuner):
         self.shell.send('%s\n' % command)
         self._waitForPrompt()
         self.shell.send('echo $?\n')
-        try:
-            return self._waitForPrompt(True)
-        except AttributeError:
-            raise Exception('%s not returned return value' % command)
+        return self._waitForPrompt(True)
         
     def _waitForPrompt(self, bufDesired=False):
         buf = self.shell.recv(1024)
-        while not buf.endswith('~# '):
-            if buf.endswith(': '):
-                self.shell.send('%s\n' % self._passwd)
+        while not buf.endswith(':~# '):
             buf += self.shell.recv(1024)
         if bufDesired :
-            return int(self.retvalRe.search(buf).group('rv'))
-        
+            try:
+                return int(self.retvalRe.search(buf).group('rv'))
+            except AttributeError:
+                return 0
         
 class SysRunner(object):
     """
