@@ -1,23 +1,25 @@
 '''
 Created on Mar 9, 2012
 
-@author: vencax 
+@author: vencax
 '''
 import os
 import re
 from paramiko.ssh_exception import SSHException
+
 
 def get_username():
     import pwd
     info = pwd.getpwuid(os.getuid())
     return info[5]
 
+
 class ParamikoRuner(object):
     """
     Base class for paramiko based runners.
     """
     known_hosts = os.path.join(get_username(), '.ssh/known_hosts')
-    
+
     def __init__(self, settings):
         import paramiko
         self._settings = settings
@@ -41,14 +43,15 @@ class ParamikoRuner(object):
             self.shell = self._client.invoke_shell()
         with self._lock:
             return self.runCommand(command)
-      
+
+
 class SudoBasedParamikoRuner(ParamikoRuner):
     """
     This is a bit problematic since there is many ways how to login as root.
     That's why this class.
     """
     retvalRe = re.compile(r'\r\n(?P<rv>[0-9]{1,})\r\n')
-        
+
     def runCommand(self, command):
         self.shell.send('sudo -i\n')
         self._waitForPrompt()
@@ -56,17 +59,18 @@ class SudoBasedParamikoRuner(ParamikoRuner):
         self._waitForPrompt()
         self.shell.send('echo $?\n')
         return self._waitForPrompt(True)
-        
+
     def _waitForPrompt(self, bufDesired=False):
         buf = self.shell.recv(1024)
         while not buf.endswith(':~# '):
             buf += self.shell.recv(1024)
-        if bufDesired :
+        if bufDesired:
             try:
                 return int(self.retvalRe.search(buf).group('rv'))
             except AttributeError:
                 return 0
-        
+
+
 class SysRunner(object):
     """
     This issues the commands directly on the machine this app runs.
